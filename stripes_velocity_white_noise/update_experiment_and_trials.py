@@ -41,19 +41,19 @@ def main():
 
         try:
             file_path = os.path.join(full_directory_path, file_name)
-            _, recording_start_time, _, header = edr_handling.load_edr(file_path)
+            _, recording_start, _, header = edr_handling.load_edr(file_path)
             recording_duration = header['recording_duration']
 
             # get insect number from file name using regex
             insect_number = re.findall(INSECT_NUMBER_EXPRESSION, file_name)[0]
 
-            insect_id = '{}_{}'.format(recording_start_time.strftime('%Y%m%d'), insect_number)
+            insect_id = '{}_{}'.format(recording_start.strftime('%Y%m%d'), insect_number)
 
             # get/create insect
             insect = get_or_create(session, models.Insect, id=insect_id)
 
             trial = models.Trial(file_name=file_name,
-                                 recording_start_time=recording_start_time,
+                                 recording_start=recording_start,
                                  recording_duration=recording_duration)
 
             trial.insect = insect

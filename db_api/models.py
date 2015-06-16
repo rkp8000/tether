@@ -14,7 +14,7 @@ class Trial(Base):
     id = Column(Integer, primary_key=True)
 
     file_name = Column(String(255))
-    recording_start_time = Column(DateTime)
+    recording_start = Column(DateTime)
     recording_duration = Column(Float)
 
     experiment_id = Column(String(255), ForeignKey('experiment.id'))
