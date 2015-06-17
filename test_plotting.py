@@ -26,7 +26,7 @@ class SegmentSelectorTestCase(unittest.TestCase):
         axs[0].plot(t, x0)
         axs[1].plot(t, x1)
 
-        segment_selector = plotting.SegmentSelector(fig, axs)
+        segment_selector = plotting.SegmentSelector(fig, axs, time_vector=t)
 
         plt.show()
 
