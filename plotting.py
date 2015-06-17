@@ -100,9 +100,25 @@ class SegmentSelector(object):
         return [(self.idx_from_time(s[0]), self.idx_from_time(s[1])) for s in self.segments]
 
 
-def plot_trial_basic(trial, columns=None):
+def plot_trial_basic(trial, fig=None, dt=0, **kwargs):
     """Plot the edr file corresponding to a trial."""
     experiment_directory_path = os.path.join(ARENA_DATA_DIRECTORY, trial.experiment.directory_path)
     file_path = os.path.join(experiment_directory_path, trial.file_name)
 
-    data = edr_handling.load_edr(file_path)[0]
+    data, _, cols, _ = edr_handling.load_edr(file_path, dt=dt)
+
+    if not fig:
+        fig = plt.figure(tight_layout=True)
+
+    # the first column of data is the time vector
+    n_axs = data.shape[1] - 1
+    axs = []
+    for a_ctr in range(n_axs):
+        ax = fig.add_subplot(n_axs, 1, a_ctr)
+        axs += [ax]
+        ax.plot(data[:, 0], data[:, a_ctr + 1], **kwargs)
+        ax.set_ylabel(cols[a_ctr + 1])
+
+    axs[-1].set_xlabel('time (s)')
+
+    return fig, np.array(axs), data
