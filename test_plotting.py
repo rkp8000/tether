@@ -17,25 +17,6 @@ class TruismsTestCase(unittest.TestCase):
 
 class SegmentSelectorTestCase(unittest.TestCase):
 
-    def test_correct_number_of_segments_stored(self):
-        fig, axs = plt.subplots(2, 1, sharex=True)
-
-        t = np.linspace(0, 100, 1001)
-        x0 = np.random.normal(0, 1, t.shape)
-        x1 = np.random.normal(0, 1, t.shape)
-
-        axs[0].plot(t, x0)
-        axs[1].plot(t, x1)
-
-        segment_selector = plotting.SegmentSelector(fig, axs, time_vector=t)
-
-        plt.show()
-
-        pp.pprint(segment_selector.segments)
-        pp.pprint(segment_selector.segments_idx)
-
-        self.assertTrue(True)
-
     def test_idx_from_time(self):
         fig, axs = plt.subplots(3, 1, sharex=True)
 
