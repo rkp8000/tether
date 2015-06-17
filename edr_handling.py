@@ -8,10 +8,10 @@ import numpy as np
 from scipy.stats import zscore
 
 HEADER_BLOCK_SIZE = 2048
-BARPOS_CONVERSION = 360/5. # from voltage to degrees
+BARPOS_CONVERSION = 360 / 5  # from volts to degrees
 
 
-def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.001,
+def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
              lmr_zscore=True, barpos_in_degrees=True):
     """Load header info and data from binary file."""
 
