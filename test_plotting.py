@@ -32,7 +32,7 @@ class SegmentSelectorTestCase(unittest.TestCase):
         plt.show()
 
         pp.pprint(segment_selector.segments)
-        pp.pprint(segment_selector.segment_idxs)
+        pp.pprint(segment_selector.segments_idx)
 
         self.assertTrue(True)
 

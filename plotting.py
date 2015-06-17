@@ -96,7 +96,7 @@ class SegmentSelector(object):
         return idx
 
     @property
-    def segment_idxs(self):
+    def segments_idx(self):
         return [(self.idx_from_time(s[0]), self.idx_from_time(s[1])) for s in self.segments]
 
 
