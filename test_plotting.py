@@ -30,6 +30,7 @@ class SegmentSelectorTestCase(unittest.TestCase):
 
         plt.show()
 
+        print(segment_selector.segments)
         self.assertTrue(True)
 
 

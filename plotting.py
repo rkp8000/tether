@@ -20,17 +20,36 @@ class SegmentSelector(object):
             self.segments = []
         else:
             self.segments = segments
+            self.show_segments()
 
         # indicator determining whether next click will be start or end of segment
         self.start = True
 
+        self.start_x = None
+
+        self.ignored_segment_color = 'r'
+
     def __call__(self, event):
         print('click', event)
-        x = event.xdata
         if event.button == 3:
-            for ax in self.axs:
-                ax.vlines(x, -3, 3, color='k', lw=3)
+            x = event.xdata
+            if self.start:
+                # draw a line at the clicked location
+                self.start_x = x
+                for ax in self.axs:
+                    ax.axvline(x, color='k', lw=1)
+            else:
+                # fill in a rectangle between the line at the start location and the line at the
+                # clicked location
+                for ax in self.axs:
+                    ax.axvline(x, color='k', lw=1)
+                    ax.axvspan(self.start_x, x, alpha=0.3, color=self.ignored_segment_color)
+                self.segments += [(self.start_x, x)]
+            self.start = not self.start
         plt.draw()
+
+    def show_segments(self):
+        print('TO DO: make this function show the segments on the axes')
 
 
 def plot_trial_basic(trial, columns=None):
