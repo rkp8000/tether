@@ -96,6 +96,9 @@ class SegmentSelector(object):
             raise TypeError('Parameter "time_vector" must be provided to constructor.')
 
         for segment_idx in segments_idx:
+            if segment_idx[0] < 0 or segment_idx[1] >= len(self.time_vector):
+                raise IndexError('Something is wrong with the segments and time_vector you have provided!')
+
             t_start = self.time_vector[segment_idx[0]]
             t_end = self.time_vector[segment_idx[1]]
 
