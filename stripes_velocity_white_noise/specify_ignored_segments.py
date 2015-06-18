@@ -19,23 +19,30 @@ EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-15', '%Y-%m-%d')
 
 
 def main():
-    # print instructions
-    print('Right click on trial to mark starts and ends of segments.')
-    print('Close window to move on to next trial.')
+    instructions = ('Right click on trial to mark starts and ends of segments.\n'
+                    'Close window to move on to next trial.')
+    print(instructions)
 
+    # get trials
     trials = session.query(models.Trial). \
         filter(models.Trial.experiment_id == EXPERIMENT_ID). \
         filter(models.Trial.recording_start >= EARLIEST_DATETIME)
 
     for trial in trials[:3]:
         fig = plt.figure(facecolor='white')
-        fig, axs, edr_data = plot_trial_basic(trial, fig, dt=.01)
+        fig, axs, edr_data = plot_trial_basic(trial, fig, dt=.02)
 
+        # define previously specified ignored segments if there are any
         if trial.ignored_segments:
-            ignored_segments = [(i_s.start_time_idx, i_s.end_time_idx) for i_s in trial.ignored_segments]
+            ignored_segments_simple = [(i_s.start_time, i_s.end_time) for i_s in trial.ignored_segments]
         else:
-            ignored_segments = None
-        segment_selector = SegmentSelector(fig, axs, time_vector=edr_data[:, 0], segments_idx=ignored_segments)
+            ignored_segments_simple = None
+
+        t_min = edr_data[0, 0]
+        t_max = edr_data[-1, 0]
+
+        # create segment selector
+        segment_selector = SegmentSelector(fig, axs, t_min, t_max, segments=ignored_segments_simple)
 
         plt.show(block=True)
 
@@ -43,11 +50,12 @@ def main():
         [session.delete(i_s) for i_s in trial.ignored_segments]
         trial.ignored_segments = []
 
-        for segment_idx in segment_selector.segments_idx:
+        # add all ignored segments that we've created in the segment selector
+        for segment in segment_selector.segments_simple:
             ignored_segment = models.IgnoredSegment()
             # convert time to time idx
-            ignored_segment.start_time_idx = segment_idx[0]
-            ignored_segment.end_time_idx = segment_idx[1]
+            ignored_segment.start_time = segment[0]
+            ignored_segment.end_time = segment[1]
 
             trial.ignored_segments += [ignored_segment]
 
