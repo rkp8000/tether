@@ -33,6 +33,7 @@ def main():
 
     # get all trials and add them to database
     for file_name in edr_files:
+        print('Attempting to load file "{}"'.format(file_name))
 
         # skip if file already added
         if session.query(models.Trial).filter_by(file_name=file_name).first():
