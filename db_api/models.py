@@ -46,8 +46,8 @@ class IgnoredSegment(Base):
 
     id = Column(Integer, primary_key=True)
 
-    start_time_idx = Column(Integer)
-    end_time_idx = Column(Integer)
+    start_time = Column(Float)
+    end_time = Column(Float)
     trial_id = Column(Integer, ForeignKey('trial.id'))
 
 
