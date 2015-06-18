@@ -15,7 +15,7 @@ import edr_handling
 from plotting import SegmentSelector, plot_trial_basic
 
 EXPERIMENT_ID = 'stripes_velocity_white_noise_no_odor'
-EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-01', '%Y-%m-%d')
+EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-15', '%Y-%m-%d')
 
 
 def main():
@@ -27,12 +27,21 @@ def main():
         filter(models.Trial.experiment_id == EXPERIMENT_ID). \
         filter(models.Trial.recording_start >= EARLIEST_DATETIME)
 
-    for trial in trials:
+    for trial in trials[:3]:
         fig = plt.figure(facecolor='white')
         fig, axs, edr_data = plot_trial_basic(trial, fig, dt=.01)
-        segment_selector = SegmentSelector(fig, axs, time_vector=edr_data[:, 0])
+
+        if trial.ignored_segments:
+            ignored_segments = [(i_s.start_time_idx, i_s.end_time_idx) for i_s in trial.ignored_segments]
+        else:
+            ignored_segments = None
+        segment_selector = SegmentSelector(fig, axs, time_vector=edr_data[:, 0], segments_idx=ignored_segments)
 
         plt.show(block=True)
+
+        # remove all ignored segments that were previously bound to this trial
+        [session.delete(i_s) for i_s in trial.ignored_segments]
+        trial.ignored_segments = []
 
         for segment_idx in segment_selector.segments_idx:
             ignored_segment = models.IgnoredSegment()
@@ -51,6 +60,7 @@ def main():
         session.commit()
     else:
         print('Data not saved.')
+        session.rollback()
 
 if __name__ == '__main__':
     main()
