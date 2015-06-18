@@ -36,7 +36,7 @@ class SegmentSelector(object):
         self.start = True
 
         self.start_x = None
-
+        self.start_lines = None
         self.segment_color = 'r'
 
     def __call__(self, event):
@@ -52,22 +52,29 @@ class SegmentSelector(object):
             if self.start:
                 # draw a line at the clicked location
                 self.start_t = t
+                self.start_lines = []
                 for ax in self.axs:
-                    ax.axvline(t, color='k', lw=1)
+                    self.start_lines += [ax.axvline(t, color='k', lw=1)]
             else:
-                # store segment
-                segment = (self.start_t, t)
+                # fill in a rectangle between the line at the start location and the line at the
+                # clicked location
+                end_lines = []
+                spans = []
+                for ax in self.axs:
+                    end_lines += [ax.axvline(t, color='k', lw=1)]
+                    spans += [ax.axvspan(self.start_t, t, alpha=0.3, color=self.segment_color)]
+
+                # store segment including all start and end lines and spans
+                segment = [self.start_t, t]
                 if self.start_t > t:
                     segment = segment[::-1]
+                    self.start_lines, end_lines = end_lines, self.start_lines
+
+                segment += [self.start_lines, end_lines, spans]
+
                 self.segments += [segment]
 
                 self.segments = sorted(self.segments, key=lambda seg: seg[0])
-
-                # fill in a rectangle between the line at the start location and the line at the
-                # clicked location
-                for ax in self.axs:
-                    ax.axvline(t, color='k', lw=1)
-                    ax.axvspan(self.start_t, t, alpha=0.3, color=self.segment_color)
 
             self.start = not self.start
 
