@@ -12,19 +12,14 @@ ARENA_DATA_DIRECTORY = os.getenv('ARENA_DATA_DIRECTORY')
 class SegmentSelector(object):
     """An extension of a figure in which one can graphically select segments."""
 
-    def __init__(self, fig, axs, segments_idx=None, time_vector=None):
+    def __init__(self, fig, axs, t_min=-np.inf, t_max=np.inf, segments=None):
         self.fig = fig
         self.axs = axs
         self.xs = [0]
         self.cid = fig.canvas.mpl_connect('button_press_event', self)
 
-        self.time_vector = time_vector
-        if self.time_vector is not None:
-            self.t_min = self.time_vector[0]
-            self.t_max = self.time_vector[-1]
-        else:
-            self.t_min = -np.inf
-            self.t_max = np.inf
+        self.t_min = t_min
+        self.t_max = t_max
 
         # indicator determining whether next click will be start or end of segment
         self.start = True
@@ -35,8 +30,8 @@ class SegmentSelector(object):
 
         self.segments = []
 
-        if segments_idx is not None:
-            self.make_segments(segments_idx)
+        if segments is not None:
+            self.make_segments(segments)
 
     def __call__(self, event):
 
@@ -89,18 +84,11 @@ class SegmentSelector(object):
 
         plt.draw()
 
-    def make_segments(self, segments_idx):
-        """Create and plot segments from a list of segment idxs."""
-
-        if self.time_vector is None:
-            raise TypeError('Parameter "time_vector" must be provided to constructor.')
-
-        for segment_idx in segments_idx:
-            if segment_idx[0] < 0 or segment_idx[1] >= len(self.time_vector):
-                raise IndexError('Something is wrong with the segments and time_vector you have provided!')
-
-            t_start = self.time_vector[segment_idx[0]]
-            t_end = self.time_vector[segment_idx[1]]
+    def make_segments(self, segments):
+        """Create and plot segments from a list of segments."""
+        for segment in segments:
+            t_start = segment[0]
+            t_end = segment[1]
 
             lines_start = []
             lines_end = []
@@ -112,28 +100,9 @@ class SegmentSelector(object):
             self.segments += [[t_start, t_end, lines_start, lines_end, spans]]
         plt.draw()
 
-    def idx_from_time(self, t):
-        """
-        Use self.time_vector to compute the index of the time in time vector that is
-        nearest to t.
-        :param t: floating point time
-        :return:
-        """
-        if self.time_vector is None:
-            raise TypeError('time_vector is not defined')
-
-        dt = self.time_vector[1] - self.time_vector[0]
-        idx = int(round(t / dt))
-        if idx < 0:
-            idx = 0
-        elif idx > len(self.time_vector) - 1:
-            idx = len(self.time_vector) - 1
-
-        return idx
-
     @property
-    def segments_idx(self):
-        return [(self.idx_from_time(s[0]), self.idx_from_time(s[1])) for s in self.segments]
+    def segments_simple(self):
+        return [(s[0], s[1]) for s in self.segments]
 
 
 def plot_trial_basic(trial, fig=None, dt=0, **kwargs):

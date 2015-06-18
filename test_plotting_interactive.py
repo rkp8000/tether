@@ -34,7 +34,7 @@ class SegmentSelectorTestCase(unittest.TestCase):
         axs[0].plot(t, x0)
         axs[1].plot(t, x1)
 
-        plotting.SegmentSelector(fig, axs, time_vector=t)
+        plotting.SegmentSelector(fig, axs, t[0], t[-1])
 
         plt.show()
 
@@ -51,16 +51,16 @@ class SegmentSelectorTestCase(unittest.TestCase):
         x0 = np.random.normal(0, 1, t.shape)
         x1 = np.random.normal(0, 1, t.shape)
 
-        segments = [(0, 100), (200, 400), (900, 999)]
+        segments = [(0, 10), (20.4, 29.1), (90, 96)]
         axs[0].plot(t, x0)
         axs[1].plot(t, x1)
 
-        segment_selector = plotting.SegmentSelector(fig, axs, time_vector=t, segments_idx=segments)
+        segment_selector = plotting.SegmentSelector(fig, axs, t[0], t[-1], segments)
 
         plt.show()
 
         # save the segments from this SegmentSelector
-        segments = segment_selector.segments_idx
+        segments = segment_selector.segments_simple
 
         # load a new SegmentSelector using the segments from the one that was just closed
         fig, axs = plt.subplots(2, 1, sharex=True)
@@ -72,7 +72,7 @@ class SegmentSelectorTestCase(unittest.TestCase):
         axs[0].plot(t, x0)
         axs[1].plot(t, x1)
 
-        segment_selector2 = plotting.SegmentSelector(fig, axs, time_vector=t, segments_idx=segments)
+        segment_selector2 = plotting.SegmentSelector(fig, axs, t[0], t[-1], segments)
 
         plt.show()
 
