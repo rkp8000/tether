@@ -15,7 +15,10 @@ import edr_handling
 from plotting import SegmentSelector, plot_trial_basic
 
 EXPERIMENT_ID = 'stripes_velocity_white_noise_no_odor'
-EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-15', '%Y-%m-%d')
+EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-01', '%Y-%m-%d')
+
+# PLOT PARAMETERS
+FIG_SIZE = (12, 12)
 
 
 def main():
@@ -28,8 +31,8 @@ def main():
         filter(models.Trial.experiment_id == EXPERIMENT_ID). \
         filter(models.Trial.recording_start >= EARLIEST_DATETIME)
 
-    for trial in trials[:3]:
-        fig = plt.figure(facecolor='white')
+    for trial in trials:
+        fig = plt.figure(facecolor='white', figsize=FIG_SIZE)
         fig, axs, edr_data = plot_trial_basic(trial, fig, dt=.02)
 
         # define previously specified ignored segments if there are any
