@@ -12,17 +12,11 @@ ARENA_DATA_DIRECTORY = os.getenv('ARENA_DATA_DIRECTORY')
 class SegmentSelector(object):
     """An extension of a figure in which one can graphically select segments."""
 
-    def __init__(self, fig, axs, segments=None, time_vector=None):
+    def __init__(self, fig, axs, segments_idx=None, time_vector=None):
         self.fig = fig
         self.axs = axs
         self.xs = [0]
         self.cid = fig.canvas.mpl_connect('button_press_event', self)
-
-        if segments is None:
-            self.segments = []
-        else:
-            self.segments = segments
-            self.show_segments()
 
         self.time_vector = time_vector
         if self.time_vector is not None:
@@ -38,6 +32,11 @@ class SegmentSelector(object):
         self.start_x = None
         self.start_lines = None
         self.segment_color = 'r'
+
+        self.segments = []
+
+        if segments_idx is not None:
+            self.make_segments(segments_idx)
 
     def __call__(self, event):
 
@@ -90,8 +89,25 @@ class SegmentSelector(object):
 
         plt.draw()
 
-    def show_segments(self):
-        print('TO DO: make this function show the segments on the axes')
+    def make_segments(self, segments_idx):
+        """Create and plot segments from a list of segment idxs."""
+
+        if self.time_vector is None:
+            raise TypeError('Parameter "time_vector" must be provided to constructor.')
+
+        for segment_idx in segments_idx:
+            t_start = self.time_vector[segment_idx[0]]
+            t_end = self.time_vector[segment_idx[1]]
+
+            lines_start = []
+            lines_end = []
+            spans = []
+            for ax in self.axs:
+                lines_start += [ax.axvline(t_start, color='k', lw=1)]
+                lines_end += [ax.axvline(t_end, color='k', lw=1)]
+                spans += [ax.axvspan(t_start, t_end, alpha=0.3, color=self.segment_color)]
+            self.segments += [[t_start, t_end, lines_start, lines_end, spans]]
+        plt.draw()
 
     def idx_from_time(self, t):
         """
