@@ -28,26 +28,26 @@ def main():
     data, _, cols, _ = edr_handling.load_from_trial(trial, dt=DT, unwrap_barpos=True)
 
     pos = data[:, cols.index('Barpos')]
-    vel = np.gradient(bar_pos) / DT
+    vel = np.gradient(pos) / DT
     vel_abs = np.abs(vel)
     lmr = data[:, cols.index('LmR')]
     freq = data[:, cols.index('Freq')]
 
     # calculate various cross-correlations (first variable is always "cause", second, "effect")
     n_lags = int(round(LAG / DT))
-    vel_x_lmr = signal.xcov_simple_multi(vel, lmr, n_lags=n_lags, normed=True)
-    vel_x_freq = signal.xcov_simple_multi(vel, freq, n_lags=n_lags, normed=True)
-    vel_abs_x_freq = vel_x_freq = signal.xcov_simple_multi(vel_abs, freq, n_lags=n_lags, normed=True)
+    vel_x_lmr = signal.xcov_simple_one_sided_multi(vel, lmr, n_lags=n_lags, normed=True)
+    vel_x_freq = signal.xcov_simple_one_sided_multi(vel, freq, n_lags=n_lags, normed=True)
+    vel_abs_x_freq = vel_x_freq = signal.xcov_simple_one_sided_multi(vel_abs, freq, n_lags=n_lags, normed=True)
 
     # calculate auto-correlations for different variables
-    vel_x_vel = signal.xcov_simple_multi(vel, vel, n_lags=n_lags, normed=True)
-    lmr_x_lmr = signal.xcov_simple_multi(lmr, lmr, n_lags=n_lags, normed=True)
-    freq_x_freq = signal.xcov_simple_multi(freq, freq, n_lags=n_lags, normed=True)
+    vel_x_vel = signal.xcov_simple_one_sided_multi(vel, vel, n_lags=n_lags, normed=True)
+    lmr_x_lmr = signal.xcov_simple_one_sided_multi(lmr, lmr, n_lags=n_lags, normed=True)
+    freq_x_freq = signal.xcov_simple_one_sided_multi(freq, freq, n_lags=n_lags, normed=True)
 
     t = np.arange(n_lags) * DT
 
     # plot cross-correlations
-    fig, axs = plt.subplots(3, 1, sharex=True)
+    fig, axs = plt.subplots(3, 1, sharex=True, tight_layout=True)
     axs[0].plot(t, vel_x_lmr)
     axs[1].plot(t, vel_x_freq)
     axs[2].plot(t, vel_abs_x_freq)
@@ -58,8 +58,10 @@ def main():
 
     axs[2].set_xlabel('t (s)')
 
+    axs[0].set_title('cross-correlations')
+
     # plot auto-correlations
-    fig, axs = plt.subplots(3, 1, sharex=True)
+    fig, axs = plt.subplots(3, 1, sharex=True, tight_layout=True)
     axs[0].plot(t, vel_x_vel)
     axs[1].plot(t, lmr_x_lmr)
     axs[2].plot(t, freq_x_freq)
@@ -67,5 +69,9 @@ def main():
     axs[0].set_ylabel('vel')
     axs[1].set_ylabel('lmr')
     axs[2].set_ylabel('freq')
+
+    axs[2].set_xlabel('t (s)')
+
+    axs[0].set_title('auto-correlations')
 
 plt.show(block=True)
