@@ -42,12 +42,22 @@ class SegmentSelector(object):
     def __call__(self, event):
 
         if event.button == 3:
+
             # get clicked location and force it into bounds
             t = event.xdata
             if t > self.t_max:
                 t = self.t_max
             if t < self.t_min:
                 t = self.t_min
+
+            # if clicked location is within a segment, remove that segment
+            for s_ctr, segment in enumerate(self.segments):
+                if segment[0] <= t <= segment[1]:
+                    # remove start lines (segment[2]), end lines (segment[3]), spans (segment[4])
+                    [[obj.remove() for obj in segment[x]] for x in range(2, 5)]
+                    self.segments.pop(s_ctr)
+                    plt.draw()
+                    return
 
             if self.start:
                 # draw a line at the clicked location
@@ -72,8 +82,8 @@ class SegmentSelector(object):
 
                 segment += [self.start_lines, end_lines, spans]
 
+                # add segment to big list and sort them
                 self.segments += [segment]
-
                 self.segments = sorted(self.segments, key=lambda seg: seg[0])
 
             self.start = not self.start
