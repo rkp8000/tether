@@ -3,12 +3,15 @@ Functions for working with edr files.
 """
 from __future__ import print_function, division
 
+import os
 import datetime
 import numpy as np
 from scipy.stats import zscore
 
 HEADER_BLOCK_SIZE = 2048
 BARPOS_CONVERSION = 360 / 5  # from volts to degrees
+
+DATA_DIRECTORY = os.getenv('ARENA_DATA_DIRECTORY')
 
 
 def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
@@ -102,5 +105,64 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
 
     # store recording duration in header
     header['recording_duration'] = int(nrows) * header['DT']
+
+    return data, file_start, cols, header
+
+
+def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_seg_lenth=10):
+    """
+    Load an edr file from a trial, splitting it into segments as indicated by
+    trial.ignored_segments.
+
+    :param trial: trial data model
+    :param dt: time interval for discretization (if down-sampling is desired)
+    :param lmr_zscore: set to True to return difference of zscores
+    :param barpos_in_degrees: set to True to return bar position in degrees
+    :param min_seg_length: minimum number of time points that must be in a segment
+    :return: list of 2D arrays, with rows indicating time points and columns variables,
+             file start datetime,
+             column names,
+             edr file header,
+    """
+
+    experiment_directory_path = os.path.join(DATA_DIRECTORY, trial.experiment.directory_path)
+    file_path = os.path.join(experiment_directory_path, trial.file_name)
+
+    data, file_start, cols, header = load_edr(file_path, dt=dt,
+                                              lmr_zscore=lmr_zscore,
+                                              barpos_in_degrees=barpos_in_degrees)
+
+    t = data[:, 0]  # get time vector
+    n_timesteps = len(t)
+
+    # get indices of ignored segments
+
+    ignored_segments_idx = []
+    for i_s in trial.ignored_segments:
+        start_time_idx = np.sum(t < i_s.start_time)
+        end_time_idx = np.sum(t < i_s.end_time)
+
+        start_time_idx = min(start_time_idx, n_timesteps - 1)
+        end_time_idx = min(end_time_idx, n_timesteps - 1)
+
+        ignored_segments_idx += [(start_time_idx, end_time_idx)]
+
+    # get indices of segments to keep
+    kept_segments_idx = []
+    for k_s_ctr in range(len(ignored_segments_idx) + 1):
+        if k_s_ctr == 0:
+            start_idx = 0
+        else:
+            start_idx = ignored_segments_idx[k_s_ctr - 1][1]
+
+        if k_s_ctr == len(ignored_segments_idx):
+            end_idx = n_timesteps
+        else:
+            end_idx = ignored_segments_idx[k_s_ctr][0]
+
+        kept_segments_idx += [(start_idx, end_idx)]
+
+    # return segments of data as long as they are long enough
+    data = [data[s[0]:s[1]] for s in kept_segments_idx if (s[1] - s[0]) >= min_seg_lenth]
 
     return data, file_start, cols, header
