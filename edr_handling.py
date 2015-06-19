@@ -7,6 +7,7 @@ import os
 import datetime
 import numpy as np
 from scipy.stats import zscore
+from mathmagic import signal
 
 HEADER_BLOCK_SIZE = 2048
 BARPOS_CONVERSION = 360 / 5  # from volts to degrees
@@ -109,7 +110,7 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
     return data, file_start, cols, header
 
 
-def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_seg_lenth=10):
+def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_seg_lenth=10, unwrap_barpos=False):
     """
     Load an edr file from a trial, splitting it into segments as indicated by
     trial.ignored_segments.
@@ -119,6 +120,7 @@ def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_se
     :param lmr_zscore: set to True to return difference of zscores
     :param barpos_in_degrees: set to True to return bar position in degrees
     :param min_seg_length: minimum number of time points that must be in a segment
+    :param unwrap_barpos: set to True to return bar position "un-modded"; useful for calculating bar velocity
     :return: list of 2D arrays, with rows indicating time points and columns variables,
              file start datetime,
              column names,
@@ -164,5 +166,9 @@ def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_se
 
     # return segments of data as long as they are long enough
     data = [data[s[0]:s[1]] for s in kept_segments_idx if (s[1] - s[0]) >= min_seg_lenth]
+
+    if unwrap_barpos:
+        original_barpos = data[:, cols.index('Barpos')]
+        data[:, cols.index('Barpos')] = signal.unwrap(original_barpos, min=-180, max=180)
 
     return data, file_start, cols, header
