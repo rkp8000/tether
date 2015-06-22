@@ -7,7 +7,7 @@ import os
 import datetime
 import numpy as np
 from scipy.stats import zscore
-from mathmagic import signal
+from math_tools import signal
 
 HEADER_BLOCK_SIZE = 2048
 BARPOS_CONVERSION = 360 / 5  # from volts to degrees
@@ -168,7 +168,8 @@ def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_se
     data = [data[s[0]:s[1]] for s in kept_segments_idx if (s[1] - s[0]) >= min_seg_lenth]
 
     if unwrap_barpos:
-        original_barpos = data[:, cols.index('Barpos')]
-        data[:, cols.index('Barpos')] = signal.unmod(original_barpos, min=-180, max=180)
+        for data_segment in data:
+            original_barpos = data_segment[:, cols.index('Barpos')]
+            data_segment[:, cols.index('Barpos')] = signal.unmod(original_barpos, range=360)
 
     return data, file_start, cols, header
