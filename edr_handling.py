@@ -169,6 +169,6 @@ def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_se
 
     if unwrap_barpos:
         original_barpos = data[:, cols.index('Barpos')]
-        data[:, cols.index('Barpos')] = signal.unwrap(original_barpos, min=-180, max=180)
+        data[:, cols.index('Barpos')] = signal.unmod(original_barpos, min=-180, max=180)
 
     return data, file_start, cols, header
