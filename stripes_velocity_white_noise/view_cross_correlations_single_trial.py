@@ -19,7 +19,7 @@ from db_api.connect import session
 import edr_handling
 
 PLOT_AUTO_CORRELATIONS = False
-PLOT_P_VALUES = False
+PLOT_P_VALUES = True
 
 TRIAL_IDS = xrange(1, 36)
 LAG = 5  # in seconds
@@ -81,7 +81,6 @@ def main():
 
         axs[0].plot(t, vel_x_lmr, lw=LW)
         axs[0].fill_between(t, lb_vel_x_lmr, ub_vel_x_lmr, color='b', alpha=ALPHA)
-        #axs[0].plot(t, vel_x_control, c='k')
 
         axs[1].plot(t, vel_x_freq, lw=LW)
         axs[1].fill_between(t, lb_vel_x_freq, ub_vel_x_freq, color='b', alpha=ALPHA)
