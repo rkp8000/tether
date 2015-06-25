@@ -19,6 +19,7 @@ EARLIEST_DATETIME = datetime.datetime.strptime('2015-06-01', '%Y-%m-%d')
 
 # PLOT PARAMETERS
 FIG_SIZE = (12, 12)
+COLS = ('Freq', 'LmR', 'Barpos', 'Barvel')
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
 
     for trial in trials:
         fig = plt.figure(facecolor='white', figsize=FIG_SIZE)
-        fig, axs, edr_data = plot_trial_basic(trial, fig, dt=.02)
+        fig, axs, edr_data = plot_trial_basic(trial, fig, cols=COLS, dt=.02)
 
         # define previously specified ignored segments if there are any
         if trial.ignored_segments:

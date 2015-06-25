@@ -16,7 +16,7 @@ DATA_DIRECTORY = os.getenv('ARENA_DATA_DIRECTORY')
 
 
 def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
-             lmr_zscore=True, barpos_in_degrees=True):
+             lmr_zscore=True, barpos_in_degrees=True, cols=None):
     """Load header info and data from binary file."""
 
     if file_name[-4:].lower() != '.edr':
@@ -49,7 +49,7 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
                 end_of_header = True
 
         # get column names
-        cols = [header['YN%d' % ii] for ii in range(header['NC'])]
+        cols_edr = [header['YN%d' % ii] for ii in range(header['NC'])]
 
         # get normalization constants from header
         ad = float(header['AD'])
@@ -71,7 +71,7 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
         # add time as first column
         time = np.arange(data.shape[0])[:, None] * header['DT']
         data = np.concatenate([time, data], axis=1)
-        cols = ['time'] + cols
+        cols_edr = ['time'] + cols_edr
 
         # downsample data
         if dt > header['DT']:
@@ -83,14 +83,14 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
             data = data[idxs, :]
 
     if lmr_zscore:
-        lampz = zscore(data[:, cols.index('Lamp')])
-        rampz = zscore(data[:, cols.index('Ramp')])
-        data[:, cols.index('LmR')] = lampz - rampz
+        lampz = zscore(data[:, cols_edr.index('Lamp')])
+        rampz = zscore(data[:, cols_edr.index('Ramp')])
+        data[:, cols_edr.index('LmR')] = lampz - rampz
 
     if barpos_in_degrees:
-        barpos = data[:, cols.index('Barpos')] * BARPOS_CONVERSION
+        barpos = data[:, cols_edr.index('Barpos')] * BARPOS_CONVERSION
         barpos[barpos > 180] -= 360
-        data[:, cols.index('Barpos')] = barpos
+        data[:, cols_edr.index('Barpos')] = barpos
 
     # create datetime object for file start time
     dt_format = '%m-%d-%Y %I:%M:%S %p'
@@ -103,10 +103,32 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
     # store recording duration in header
     header['recording_duration'] = int(nrows) * header['DT']
 
+    if cols:
+        cols = ['time'] + list(cols)
+        # rearrange data matrix
+        data_new = np.zeros((data.shape[0], len(cols)),)
+        for c_ctr, col in enumerate(cols):
+            if col in cols_edr:
+                data_new[:, c_ctr] = data[:, cols_edr.index(col)]
+            elif col == 'Barvel':
+                # un mod the position so we can calculate velocities properly
+                pos = data[:, cols_edr.index('Barpos')]
+                if barpos_in_degrees:
+                    mod_range = 360
+                else:
+                    mod_range = 5
+                pos_unmod = signal.unmod(pos, range=mod_range)
+                vel = np.gradient(pos_unmod) / dt
+                data_new[:, c_ctr] = vel
+            else:
+                raise KeyError('Column type "{}" not recognized!'.format(col))
+        data = data_new
+    else:
+        cols = cols_edr
     return data, file_start, cols, header
 
 
-def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_seg_lenth=10, unwrap_barpos=False):
+def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_seg_lenth=10, unwrap_barpos=False, cols=None):
     """
     Load an edr file from a trial, splitting it into segments as indicated by
     trial.ignored_segments.
@@ -128,7 +150,8 @@ def load_from_trial(trial, dt=0, lmr_zscore=True, barpos_in_degrees=True, min_se
 
     data, file_start, cols, header = load_edr(file_path, dt=dt,
                                               lmr_zscore=lmr_zscore,
-                                              barpos_in_degrees=barpos_in_degrees)
+                                              barpos_in_degrees=barpos_in_degrees,
+                                              cols=cols)
 
     t = data[:, 0]  # get time vector
     n_timesteps = len(t)
