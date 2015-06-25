@@ -19,14 +19,15 @@ from db_api.connect import session
 import edr_handling
 
 PLOT_AUTO_CORRELATIONS = False
-PLOT_P_VALUES = True
+PLOT_P_VALUES = False
 
 TRIAL_IDS = xrange(1, 36)
-LAG = 5  # in seconds
+LAG_FORWARD = 5  # in seconds
+LAG_BACK = 0.5  # in seconds
 DT = .02  # in seconds
 
 # for building the control time-series (to make sure things work!)
-CONTROL_FILTER_T = np.linspace(0, LAG, int(LAG/DT), endpoint=False)
+CONTROL_FILTER_T = np.linspace(0, LAG_FORWARD, int(LAG_FORWARD/DT), endpoint=False)
 CONTROL_FILTER = .1 * np.exp(-CONTROL_FILTER_T / 1.)
 CONTROL_SHIFT = 20
 CONTROL_FILTER = np.concatenate([np.zeros(20,), CONTROL_FILTER[:-CONTROL_SHIFT]])
@@ -55,25 +56,34 @@ def main():
         control = [c[:-N_TIMESTEPS_FILTER + 1] for c in control]
 
         # calculate various cross-correlations (first variable is always "cause", second, "effect")
-        n_lags = int(round(LAG / DT))
+        n_lags_back = int(round(LAG_BACK / DT))
+        n_lags_forward = int(round(LAG_FORWARD / DT))
+
         vel_x_lmr, p_vel_x_lmr, lb_vel_x_lmr, ub_vel_x_lmr = \
-            signal.xcov_simple_one_sided_multi(vel, lmr, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(vel, lmr, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
         vel_x_control, p_vel_x_control, lb_vel_x_control, ub_vel_x_control = \
-            signal.xcov_simple_one_sided_multi(vel, control, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(vel, control, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
         vel_x_freq, p_vel_x_freq, lb_vel_x_freq, ub_vel_x_freq = \
-            signal.xcov_simple_one_sided_multi(vel, freq, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(vel, freq, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
         vel_abs_x_freq, p_vel_abs_x_freq, lb_vel_abs_x_freq, ub_vel_abs_x_freq = \
-            signal.xcov_simple_one_sided_multi(vel_abs, freq, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(vel_abs, freq, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
 
         # calculate auto-correlations for different variables
         vel_x_vel, p_vel_x_vel, lb_vel_x_vel, ub_vel_x_vel = \
-            signal.xcov_simple_one_sided_multi(vel, vel, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(vel, vel, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
         lmr_x_lmr, p_lmr_x_lmr, lb_lmr_x_lmr, ub_lmr_x_lmr = \
-            signal.xcov_simple_one_sided_multi(lmr, lmr, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(lmr, lmr, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
         freq_x_freq, p_freq_x_freq, lb_freq_x_freq, ub_freq_x_freq = \
-            signal.xcov_simple_one_sided_multi(freq, freq, n_lags=n_lags, normed=True)
+            signal.xcov_simple_two_sided_multi(freq, freq, n_lags_back=n_lags_back,
+                                               n_lags_forward=n_lags_forward, normed=True)
 
-        t = np.arange(n_lags) * DT
+        t = np.arange(-n_lags_back, n_lags_forward) * DT
 
         # plot cross-correlations
         fig, axs = plt.subplots(3, 1, sharex=True, tight_layout=True)
