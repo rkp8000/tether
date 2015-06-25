@@ -49,7 +49,7 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
                 end_of_header = True
 
         # get column names
-        cols = [header['YN%d'%ii] for ii in range(header['NC'])]
+        cols = [header['YN%d' % ii] for ii in range(header['NC'])]
 
         # get normalization constants from header
         ad = float(header['AD'])
@@ -60,7 +60,7 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
 
         # load data into array
         ncols = header['NC']
-        nrows = header['NP']/ncols
+        nrows = header['NP'] / ncols
         data = np.fromfile(f, dtype=np.int16).reshape((nrows, ncols))
         data = data.astype(float)
         # normalize data by calibration, etc.
@@ -72,10 +72,6 @@ def load_edr(file_name, header_block_size=HEADER_BLOCK_SIZE, dt=.01,
         time = np.arange(data.shape[0])[:, None] * header['DT']
         data = np.concatenate([time, data], axis=1)
         cols = ['time'] + cols
-
-        # swap frequency & LmR columns
-        cols[3], cols[4] = cols[4], cols[3]
-        data[:, [3, 4]] = data[:, [4, 3]]
 
         # downsample data
         if dt > header['DT']:
