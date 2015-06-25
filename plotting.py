@@ -119,7 +119,7 @@ def plot_trial_basic(trial, fig=None, dt=0, **kwargs):
     n_axs = data.shape[1] - 1
     axs = []
     for a_ctr in range(n_axs):
-        ax = fig.add_subplot(n_axs, 1, a_ctr)
+        ax = fig.add_subplot(n_axs, 1, a_ctr + 1)
         axs += [ax]
         ax.plot(data[:, 0], data[:, a_ctr + 1], **kwargs)
         ax.set_ylabel(cols[a_ctr + 1])
