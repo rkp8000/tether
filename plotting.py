@@ -115,7 +115,6 @@ def plot_trial_basic(trial, fig=None, dt=0, cols=None, **kwargs):
     if not fig:
         fig = plt.figure(tight_layout=True)
 
-    import pdb; pdb.set_trace()
     # the first column of data is the time vector
     n_axs = data.shape[1] - 1
     axs = []
