@@ -19,7 +19,7 @@ EXPERIMENT_DIRECTORY_PATH = 'experiments/stripes_velocity_white_noise_footodor_v
 DATETIME_EXPRESSION = '(\d{6}_\d{6})_stripes'
 INSECT_NUMBER_EXPRESSION = 'insect(\d*)_'
 ODOR_TYPE_EXPRESSION = '_(\w*)_ypos'
-SOLENOID_STATUS_EXPRESSION = 'odor_(\S*).EDR'
+SOLENOID_STATUS_EXPRESSION = '_odor_(\S*).EDR'
 
 ARENA_DATA_DIRECTORY = os.getenv('ARENA_DATA_DIRECTORY')
 
