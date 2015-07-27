@@ -18,11 +18,12 @@ from db_api.connect import session
 
 import edr_handling
 
-PLOT_TIME_SERIES = False
-PLOT_AUTO_CORRELATIONS = True
+PLOT_TIME_SERIES = True
+PLOT_AUTO_CORRELATIONS = False
 PLOT_P_VALUES = False
 COLORS = ('k', 'b')
 
+FIG_SIZE_CC = (12, 12)
 FIG_SIZE_TIME_SERIES = (16, 16)
 
 EXPERIMENT_ID = 'stripes_velocity_white_noise_footodor_vs_control'
@@ -47,22 +48,24 @@ ALPHA = 0.3
 
 def main():
     # get trial pairs
-    trial_pairs = session.query(models.Trial.pair).filter_by(experiment_id=EXPERIMENT_ID)
+    trial_pairs = session.query(models.TrialPair)
     for trial_pair in trial_pairs:
-        # get trials
-        trial_solenoid_off = session.query(models.Trial).filter(models.Trial.pair == trial_pair,
-                                                                models.Trial.odor_status.solenoid_active is False)
-        trial_solenoid_on = session.query(models.Trial).filter(models.Trial.pair == trial_pair,
-                                                               models.Trial.odor_status.solenoid_active is True)
+        # get trials and attach them to the correct labels according to their solenoid state
+        if trial_pair.trials[0].odor_status.solenoid_active:
+            trial_solenoid_on = trial_pair.trials[0]
+            trial_solenoid_off = trial_pair.trials[1]
+        else:
+            trial_solenoid_on = trial_pair.trials[1]
+            trial_solenoid_off = trial_pair.trials[0]
 
-        print('Trial pair {}'.format(trial_pair.id))
+        print('Trial pair {}, odor = {}'.format(trial_pair.id, trial_solenoid_on.odor_status.odor))
 
         # open figures
         ## cross correlations
-        fig_cc, axs_cc = plt.subplots(5, 1, sharex=True, tight_layout=True)
+        fig_cc, axs_cc = plt.subplots(6, 1, figsize=FIG_SIZE_CC, sharex=True, tight_layout=True)
 
         if PLOT_TIME_SERIES:
-            fig_ts, axs_ts = plt.subplots(6, 1, figsize=FIG_SIZE_TIME_SERIES, sharex=True, tight_layout=True)
+            fig_ts, axs_ts = plt.subplots(7, 1, figsize=FIG_SIZE_TIME_SERIES, sharex=True, tight_layout=True)
 
         if PLOT_P_VALUES:
             fig_pv, axs_pv = plt.subplots(4, 1, sharex=True, tight_layout=True)
@@ -82,6 +85,9 @@ def main():
                    for data_segment in data]
             freq = [data_segment[:, cols.index('Freq')] for data_segment in data]
             stim_rand = [np.random.normal(0, STIM_RANDOM_NOISE, len(v)) for v in vel]
+
+            if trial == trial_solenoid_on:
+                odor_stim = [data_segment[:, cols.index('S1')] for data_segment in data]
 
             # build a control response to make sure we'd be able to accurately recover the filter if there was one
             control = [sp_signal.fftconvolve(v, CONTROL_FILTER, 'full') for v in vel]
@@ -110,6 +116,11 @@ def main():
                                                    n_lags_forward=n_lags_forward, normed=True)
             vel_abs_x_freq, p_vel_abs_x_freq, lb_vel_abs_x_freq, ub_vel_abs_x_freq = \
                 signal.xcov_simple_two_sided_multi(vel_abs, freq, n_lags_back=n_lags_back,
+                                                   n_lags_forward=n_lags_forward, normed=True)
+
+            if trial == trial_solenoid_on:
+                odor_x_freq, p_vel_odor_x_freq, lb_odor_x_freq, ub_odor_x_freq = \
+                signal.xcov_simple_two_sided_multi(odor_stim, freq, n_lags_back=n_lags_back,
                                                    n_lags_forward=n_lags_forward, normed=True)
 
             # calculate auto-correlations for different variables
@@ -149,15 +160,20 @@ def main():
             axs_cc[4].plot(t, vel_abs_x_freq, lw=LW, color=color)
             axs_cc[4].fill_between(t, lb_vel_abs_x_freq, ub_vel_abs_x_freq, color=color, alpha=ALPHA)
 
+            if trial == trial_solenoid_on:
+                axs_cc[5].plot(t, odor_x_freq, lw=LW, color=color)
+                axs_cc[5].fill_between(t, lb_odor_x_freq, ub_odor_x_freq, color=color, alpha=ALPHA)
+
             axs_cc[0].set_ylabel('vel x lmr')
             axs_cc[1].set_ylabel('vel x lpr')
             axs_cc[2].set_ylabel('rand x lpr')
             axs_cc[3].set_ylabel('vel x freq')
             axs_cc[4].set_ylabel('|vel| x freq')
+            axs_cc[5].set_ylabel('odor x freq')
 
             axs_cc[3].set_xlabel('t (s)')
 
-            axs_cc[0].set_title('cross-correlations')
+            axs_cc[0].set_title('cross-correlations\nTrial pair {}, odor = {}'.format(trial_pair.id, trial_solenoid_on.odor_status.odor))
 
             if PLOT_TIME_SERIES:
                 for d_ctr, data_segment in enumerate(data):
@@ -168,13 +184,16 @@ def main():
                     axs_ts[3].plot(t, vel[d_ctr], lw=LW, color=color)
                     axs_ts[4].plot(t, vel_abs[d_ctr], lw=LW, color=color)
                     axs_ts[5].plot(t, pos[d_ctr], lw=LW, color=color)
+                    if trial == trial_solenoid_on:
+                        axs_ts[6].plot(t, odor_stim[d_ctr], lw=LW, color=color)
                 axs_ts[0].set_ylabel('lmr')
                 axs_ts[1].set_ylabel('lpr')
                 axs_ts[2].set_ylabel('freq')
                 axs_ts[3].set_ylabel('vel')
                 axs_ts[4].set_ylabel('vel_abs')
                 axs_ts[5].set_ylabel('pos')
-                axs_ts[5].set_xlabel('t (s)')
+                axs_ts[6].set_ylabel('odor')
+                axs_ts[6].set_xlabel('t (s)')
                 axs_ts[0].set_title('down-sampled time-series')
                 axs_ts[0].set_xlim(data[0][0, 0], data[-1][-1, 0])
 
