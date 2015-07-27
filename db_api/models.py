@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import Integer, String, Float, DateTime, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from connect import engine
 
@@ -70,7 +70,7 @@ class TrialOdorStatus(Base):
     solenoid_active = Column(Boolean)
     odor = Column(String(100))
 
-    trial = relationship("Trial", backref='odor_status', uselist=False)
+    trial = relationship("Trial", backref=backref('odor_status', uselist=False))
 
 
 if __name__ == '__main__':

@@ -41,7 +41,7 @@ def main():
         print('Attempting to load file "{}"'.format(file_name))
 
         # skip if file already added
-        if session.query(models.Trial).filter_by(file_name=file_name).first():
+        if session.query(models.Trial).filter_by(file_name=file_name).all():
             print('Skipping file "{}" because it is already in the database.'.format(file_name))
             continue
 
@@ -65,6 +65,9 @@ def main():
             else:
                 solenoid_active = True
 
+            odor_status = models.TrialOdorStatus(odor=odor, solenoid_active=solenoid_active)
+            session.add(odor_status)
+
             # get insect number from file name using regex
             insect_number = re.findall(INSECT_NUMBER_EXPRESSION, file_name)[0]
 
@@ -79,7 +82,7 @@ def main():
 
             trial.insect = insect
             trial.experiment = experiment
-            trial.odor_status = models.TrialOdorStatus(odor=odor, solenoid_active=solenoid_active)
+            trial.odor_status = odor_status
             trial.pair = trial_pair
 
             session.add(trial)
